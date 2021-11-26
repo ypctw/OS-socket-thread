@@ -15,6 +15,7 @@ typedef struct HashNode
     char *key;
     char *value;
 } HashNode;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int Hashing (char* Key);
 HashNode* HashNode_Create(char *Key, char *Value);
 HashNode* HashNode_Insert(HashNode* Root, char* Key,char* Value);
@@ -36,6 +37,7 @@ void *child(void *arg)
         else
         {
             printf("%s",buf);
+            pthread_mutex_lock(&mutex);
             switch(buf[0])
             {
             case 'S':
@@ -54,7 +56,6 @@ void *child(void *arg)
                 {
                     strcpy(buf, "");
                     memset(buf, '\0', strlen(node->value)+strlen(node->key)+1);
-
                     strcat(buf,node->key);
                     strcat(buf," ");
                     strcat(buf,node->value);
@@ -75,6 +76,7 @@ void *child(void *arg)
                 pthread_exit(NULL);
                 break;
             }
+            pthread_mutex_unlock(&mutex);
         }
     }
 }
@@ -138,6 +140,7 @@ int main(int argc, char **argv)
             printf("server is full\n");
         else
         {
+
             pthread_create(&threads[now_thread],NULL,child,(void*)data);
             thread_sum[now_thread]= true;
         }

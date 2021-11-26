@@ -17,6 +17,12 @@ void Help()
     printf("-------------------------------------------------------------\n");
     return;
 }
+void ErrorMessage(char *s)
+{
+    printf("[Fail] Did you Mean %s ? TYPE HELP\n",s);
+    return;
+}
+
 int main(int argc, char **argv)
 {
     int opt;
@@ -73,22 +79,54 @@ int main(int argc, char **argv)
         switch(buf[0])
         {
         case 'H':
+            strncpy(key,buf,4);
+            if(strcmp(key,"HELP")!=0)
+            {
+                ErrorMessage("HELP");
+                break;
+            }
             Help();
             break;
         case 'E':
-            send(clientfd,"E",sizeof(buf),0);
+            strncpy(key,buf,4);
+            if(strcmp(key,"EXIT")!=0)
+            {
+                ErrorMessage("EXIT");
+                break;
+            }
+            while(send(clientfd,buf,sizeof(buf),0) < 0)
+                printf("Retry!\n");
+            while(recv(clientfd, buf, sizeof(buf), 0)<0)
+                printf("Retry");
             close(clientfd);
             exit(EXIT_SUCCESS);
         case 'S':
+            strncpy(key,buf,3);
+            if(strcmp(key,"SET")!=0)
+            {
+                ErrorMessage("SET");
+                break;
+            }
             sscanf(buf,"SET %s %s",key,value);
             while(send(clientfd,buf,sizeof(buf),0) < 0)
                 printf("Retry!\n");
             while(recv(clientfd, buf, sizeof(buf), 0)<0)
                 printf("Retry");
+            if (buf[0] =='@')
+            {
+                printf("[Fail] Type HELP\n");
+                break;
+            }
             if (buf[0] =='F')
                 printf("[OK] PUT K-V pair (%s, %s) to DataBase!\n",key,value);
             break;
         case 'G':
+            strncpy(key,buf,3);
+            if(strcmp(key,"GET")!=0)
+            {
+                ErrorMessage("GET");
+                break;
+            }
             sscanf(buf,"GET %s",key);
             while(send(clientfd,buf,sizeof(buf),0) < 0)
                 printf("Retry!\n");
@@ -103,16 +141,24 @@ int main(int argc, char **argv)
             }
             break;
         case 'D':
+            strncpy(key,buf,6);
+            if(strcmp(key,"DELETE")!=0)
+            {
+                ErrorMessage("DELETE");
+                break;
+            }
             sscanf(buf,"DELETE %s",key);
             while(send(clientfd,buf,sizeof(buf),0) < 0)
                 printf("Retry!\n");
             while(recv(clientfd, buf, sizeof(buf), 0) < 0)
                 printf("Retry");
+
             if (buf[0] =='F')
-                printf("Finish Delete %s\n",key);
+                printf("[OK] Finish Delete %s\n",key);
             break;
         default:
-            continue;
+            ErrorMessage("HELP");
+            break;
         }
         printf("> ");
     }
